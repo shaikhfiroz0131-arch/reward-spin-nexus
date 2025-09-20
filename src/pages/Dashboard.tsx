@@ -4,22 +4,31 @@ import { YouTubeSection } from '@/components/game/YouTubeSection';
 import { AdSection } from '@/components/game/AdSection';
 import { ActionButtons } from '@/components/game/ActionButtons';
 import { DailyRewardCard } from '@/components/game/DailyRewardCard';
+import { ShopDialog } from '@/components/game/ShopDialog';
+import { HistoryDialog } from '@/components/game/HistoryDialog';
+import { RedeemDialog } from '@/components/game/RedeemDialog';
+import { SpinDialog } from '@/components/game/SpinDialog';
 
 export default function Dashboard() {
+  const [shopOpen, setShopOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [redeemOpen, setRedeemOpen] = useState(false);
+  const [spinOpen, setSpinOpen] = useState(false);
+
   const handleShopClick = () => {
-    console.log('Shop clicked');
+    setShopOpen(true);
   };
 
   const handleRedeemClick = () => {
-    console.log('Redeem clicked');
+    setRedeemOpen(true);
   };
 
   const handleHistoryClick = () => {
-    console.log('History clicked');
+    setHistoryOpen(true);
   };
 
   const handleSpinClick = () => {
-    console.log('Spin clicked');
+    setSpinOpen(true);
   };
 
   return (
@@ -51,6 +60,12 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
+
+      {/* Dialogs */}
+      <ShopDialog open={shopOpen} onOpenChange={setShopOpen} />
+      <HistoryDialog open={historyOpen} onOpenChange={setHistoryOpen} />
+      <RedeemDialog open={redeemOpen} onOpenChange={setRedeemOpen} />
+      <SpinDialog open={spinOpen} onOpenChange={setSpinOpen} />
     </div>
   );
 }

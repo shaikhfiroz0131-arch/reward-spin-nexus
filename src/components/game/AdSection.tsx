@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tv, Clock } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AdButtonState {
   available: boolean;
@@ -44,7 +45,7 @@ export function AdSection() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleWatchAd = (adType: string) => {
+  const handleWatchAd = async (adType: string) => {
     // Simulate ad watching
     const cooldownTime = 5 * 60; // 5 minutes in seconds
     
@@ -58,7 +59,42 @@ export function AdSection() {
       [adType]: cooldownTime
     }));
 
-    // TODO: Call backend to award coins and set cooldown
+    try {
+      // Award coins for watching ad
+      const { data: userData } = await supabase
+        .from('users')
+        .select('*')
+        .eq('auth_user_id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      if (userData) {
+        await supabase
+          .from('users')
+          .update({ coins: userData.coins + 25 })
+          .eq('id', userData.id);
+
+        await supabase
+          .from('transactions')
+          .insert({
+            user_id: userData.id,
+            type: 'credit',
+            amount: 25,
+            source: 'ad',
+            description: `Watched ${adType.toUpperCase()}`
+          });
+
+        // Record ad cooldown
+        await supabase
+          .from('ad_cooldowns')
+          .upsert({
+            user_id: userData.id,
+            ad_type: adType,
+            last_used: new Date().toISOString()
+          });
+      }
+    } catch (error) {
+      console.error('Error awarding ad coins:', error);
+    }
   };
 
   const formatTime = (seconds: number) => {

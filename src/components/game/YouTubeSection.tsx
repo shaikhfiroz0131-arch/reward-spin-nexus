@@ -3,20 +3,47 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Play, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export function YouTubeSection() {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
   const [videoUrl, setVideoUrl] = useState('https://www.youtube.com/embed/dQw4w9WgXcQ'); // Example video
+  const { toast } = useToast();
 
   const handleWatchVideo = () => {
     setIsVideoOpen(true);
   };
 
-  const handleVideoComplete = () => {
-    // This would be called when video ends
-    // For demo purposes, we'll simulate coin reward
+  const handleVideoComplete = async () => {
+    try {
+      // Award coins for watching video
+      const { data: userData } = await supabase
+        .from('users')
+        .select('*')
+        .eq('auth_user_id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      if (userData) {
+        await supabase
+          .from('users')
+          .update({ coins: userData.coins + 50 })
+          .eq('id', userData.id);
+
+        await supabase
+          .from('transactions')
+          .insert({
+            user_id: userData.id,
+            type: 'credit',
+            amount: 50,
+            source: 'video',
+            description: 'Watched YouTube video'
+          });
+      }
+    } catch (error) {
+      console.error('Error awarding video coins:', error);
+    }
     setIsVideoOpen(false);
-    // TODO: Call backend to award coins
   };
 
   return (
