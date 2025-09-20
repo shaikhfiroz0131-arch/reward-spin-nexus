@@ -7,6 +7,7 @@ interface AuthContextType {
   userProfile: any;
   loading: boolean;
   signIn: (username: string, password: string) => Promise<void>;
+  signUp: (username: string, password: string) => Promise<any>;
   signOut: () => Promise<void>;
 }
 
@@ -60,10 +61,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (username: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
-      email: `${username}@rngaming.local`, // Convert username to email format
+      email: `${username}@rngaming.local`,
       password,
     });
     if (error) throw error;
+  };
+
+  const signUp = async (username: string, password: string) => {
+    const { data, error } = await supabase.auth.signUp({
+      email: `${username}@rngaming.local`,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+        data: {
+          username: username
+        }
+      }
+    });
+    
+    if (error) throw error;
+    
+    // Create user profile
+    if (data.user) {
+      const { error: profileError } = await supabase
+        .from('users')
+        .insert({
+          auth_user_id: data.user.id,
+          username: username,
+          coins: 1000,
+          daily_streak: 0
+        });
+      
+      if (profileError) throw profileError;
+    }
+    
+    return data;
   };
 
   const signOut = async () => {
@@ -76,6 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userProfile,
     loading,
     signIn,
+    signUp,
     signOut,
   };
 
